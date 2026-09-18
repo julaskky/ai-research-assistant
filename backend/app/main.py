@@ -52,11 +52,7 @@ async def upload_paper(
 
     extracted_text = extract_text_from_pdf(file_path)
 
-    paper = Paper(
-        filename=file.filename,
-        file_path=str(file_path),
-        extracted_text=extracted_text
-    )
+    paper = Paper(filename=file.filename, title=file.filename, file_path=str(file_path), extracted_text=extracted_text)
 
     db.add(paper)
     db.commit()
@@ -74,13 +70,14 @@ def get_papers(db: Session = Depends(get_db)):
     papers = db.query(Paper).all()
 
     return [
-        {
-            "id": paper.id,
-            "filename": paper.filename,
-            "file_path": paper.file_path
-        }
-        for paper in papers
-    ]
+    {
+        "id": paper.id,
+        "filename": paper.filename,
+        "title": paper.title,
+        "file_path": paper.file_path
+    }
+    for paper in papers
+]
 
 
 @app.get("/papers/search")
@@ -120,10 +117,11 @@ def get_paper(paper_id: int, db: Session = Depends(get_db)):
         )
 
     return {
-        "id": paper.id,
-        "filename": paper.filename,
-        "file_path": paper.file_path,
-        "text_length": len(paper.extracted_text)
+    "id": paper.id,
+    "filename": paper.filename,
+    "title": paper.title,
+    "file_path": paper.file_path,
+    "text_length": len(paper.extracted_text)
     }
 
 

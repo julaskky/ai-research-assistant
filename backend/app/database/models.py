@@ -8,5 +8,6 @@ class Paper(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String, nullable=False)
+    title = Column(String, nullable=True)
     file_path = Column(String, nullable=False)
     extracted_text = Column(Text, nullable=False)

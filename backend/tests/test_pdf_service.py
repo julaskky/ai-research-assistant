@@ -60,6 +60,7 @@ def test_get_paper():
 
     assert paper["id"] == 1
     assert paper["filename"] == "computers-14-00494.pdf"
+    assert paper["title"] == "computers-14-00494.pdf"
     assert paper["text_length"] == 56611
 
 

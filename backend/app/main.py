@@ -1,8 +1,18 @@
 from pathlib import Path
 
+from backend.app.database.init_db import initialize_database
+
 from fastapi import FastAPI, File, UploadFile, HTTPException
 
 from backend.app.services.pdf_service import extract_text_from_pdf
+
+
+from fastapi import Depends
+from sqlalchemy.orm import Session
+
+from backend.app.database.database import get_db
+from backend.app.database.models import Paper
+
 
 
 app = FastAPI(
@@ -11,6 +21,7 @@ app = FastAPI(
     version="0.1.0"
 )
 
+initialize_database()
 
 UPLOAD_DIR = Path("data")
 UPLOAD_DIR.mkdir(exist_ok=True)
@@ -24,7 +35,10 @@ def root():
 
 
 @app.post("/papers/upload")
-async def upload_paper(file: UploadFile = File(...)):
+async def upload_paper(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
     if file.content_type != "application/pdf":
         raise HTTPException(
             status_code=400,
@@ -37,6 +51,16 @@ async def upload_paper(file: UploadFile = File(...)):
         buffer.write(await file.read())
 
     extracted_text = extract_text_from_pdf(file_path)
+
+    paper = Paper(
+        filename=file.filename,
+        file_path=str(file_path),
+        extracted_text=extracted_text
+    )
+
+    db.add(paper)
+    db.commit()
+    db.refresh(paper)
 
     return {
         "message": "Paper uploaded successfully",

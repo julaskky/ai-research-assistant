@@ -4,3 +4,4 @@ __pycache__/
 .env
 .vscode/
 data/*.pdf
+data/research_assistant.db

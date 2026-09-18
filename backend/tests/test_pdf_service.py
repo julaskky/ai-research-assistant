@@ -48,3 +48,23 @@ def test_get_papers():
     assert isinstance(papers, list)
     assert len(papers) >= 1
     assert papers[0]["filename"] == "computers-14-00494.pdf"
+
+
+
+def test_get_paper():
+    response = client.get("/papers/1")
+
+    assert response.status_code == 200
+
+    paper = response.json()
+
+    assert paper["id"] == 1
+    assert paper["filename"] == "computers-14-00494.pdf"
+    assert paper["text_length"] == 56611
+
+
+def test_get_paper_not_found():
+    response = client.get("/papers/999")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Paper not found."

@@ -81,3 +81,22 @@ def get_papers(db: Session = Depends(get_db)):
         }
         for paper in papers
     ]
+
+
+
+@app.get("/papers/{paper_id}")
+def get_paper(paper_id: int, db: Session = Depends(get_db)):
+    paper = db.query(Paper).filter(Paper.id == paper_id).first()
+
+    if paper is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Paper not found."
+        )
+
+    return {
+        "id": paper.id,
+        "filename": paper.filename,
+        "file_path": paper.file_path,
+        "text_length": len(paper.extracted_text)
+    }

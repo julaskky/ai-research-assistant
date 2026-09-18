@@ -67,3 +67,17 @@ async def upload_paper(
         "filename": file.filename,
         "text_length": len(extracted_text)
     }
+
+
+@app.get("/papers")
+def get_papers(db: Session = Depends(get_db)):
+    papers = db.query(Paper).all()
+
+    return [
+        {
+            "id": paper.id,
+            "filename": paper.filename,
+            "file_path": paper.file_path
+        }
+        for paper in papers
+    ]

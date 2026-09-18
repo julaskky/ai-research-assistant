@@ -35,3 +35,16 @@ def test_upload_rejects_non_pdf():
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Only PDF files are allowed."
+
+
+
+def test_get_papers():
+    response = client.get("/papers")
+
+    assert response.status_code == 200
+
+    papers = response.json()
+
+    assert isinstance(papers, list)
+    assert len(papers) >= 1
+    assert papers[0]["filename"] == "computers-14-00494.pdf"

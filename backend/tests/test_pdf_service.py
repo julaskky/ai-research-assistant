@@ -88,3 +88,23 @@ def test_get_paper_text_not_found():
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Paper not found."
+
+
+
+def test_search_papers():
+    response = client.get("/papers/search?q=AI")
+
+    assert response.status_code == 200
+
+    papers = response.json()
+
+    assert isinstance(papers, list)
+    assert len(papers) >= 1
+    assert papers[0]["filename"] == "computers-14-00494.pdf"
+
+
+def test_search_papers_no_results():
+    response = client.get("/papers/search?q=xyznonexistent123")
+
+    assert response.status_code == 200
+    assert response.json() == []

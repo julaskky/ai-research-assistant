@@ -83,6 +83,25 @@ def get_papers(db: Session = Depends(get_db)):
     ]
 
 
+@app.get("/papers/search")
+def search_papers(q: str, db: Session = Depends(get_db)):
+    papers = (
+        db.query(Paper)
+        .filter(Paper.extracted_text.ilike(f"%{q}%"))
+        .all()
+    )
+
+    return [
+        {
+            "id": paper.id,
+            "filename": paper.filename
+        }
+        for paper in papers
+    ]
+
+
+
+
 
 @app.get("/papers/{paper_id}")
 def get_paper(paper_id: int, db: Session = Depends(get_db)):
@@ -118,3 +137,6 @@ def get_paper_text(paper_id: int, db: Session = Depends(get_db)):
         "filename": paper.filename,
         "extracted_text": paper.extracted_text
     }
+
+
+

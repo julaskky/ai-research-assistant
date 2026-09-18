@@ -1,7 +1,8 @@
 from pathlib import Path
 
-import fitz
 from fastapi import FastAPI, File, UploadFile, HTTPException
+
+from backend.app.services.pdf_service import extract_text_from_pdf
 
 
 app = FastAPI(
@@ -13,17 +14,6 @@ app = FastAPI(
 
 UPLOAD_DIR = Path("data")
 UPLOAD_DIR.mkdir(exist_ok=True)
-
-
-def extract_text_from_pdf(file_path: Path) -> str:
-    """Extract text from all pages of a PDF document."""
-    text = []
-
-    with fitz.open(file_path) as document:
-        for page in document:
-            text.append(page.get_text())
-
-    return "\n".join(text).strip()
 
 
 @app.get("/")

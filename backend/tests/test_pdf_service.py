@@ -108,3 +108,10 @@ def test_search_papers_no_results():
 
     assert response.status_code == 200
     assert response.json() == []
+
+
+def test_search_papers_empty_query():
+    response = client.get("/papers/search?q=")
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Search query cannot be empty."

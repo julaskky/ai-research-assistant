@@ -85,6 +85,12 @@ def get_papers(db: Session = Depends(get_db)):
 
 @app.get("/papers/search")
 def search_papers(q: str, db: Session = Depends(get_db)):
+    if not q.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Search query cannot be empty."
+        )
+
     papers = (
         db.query(Paper)
         .filter(Paper.extracted_text.ilike(f"%{q}%"))

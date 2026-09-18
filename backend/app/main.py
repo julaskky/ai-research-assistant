@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import fitz
 from fastapi import FastAPI, File, UploadFile, HTTPException
 
 
@@ -12,6 +13,17 @@ app = FastAPI(
 
 UPLOAD_DIR = Path("data")
 UPLOAD_DIR.mkdir(exist_ok=True)
+
+
+def extract_text_from_pdf(file_path: Path) -> str:
+    """Extract text from all pages of a PDF document."""
+    text = []
+
+    with fitz.open(file_path) as document:
+        for page in document:
+            text.append(page.get_text())
+
+    return "\n".join(text).strip()
 
 
 @app.get("/")
@@ -34,7 +46,10 @@ async def upload_paper(file: UploadFile = File(...)):
     with file_path.open("wb") as buffer:
         buffer.write(await file.read())
 
+    extracted_text = extract_text_from_pdf(file_path)
+
     return {
         "message": "Paper uploaded successfully",
-        "filename": file.filename
+        "filename": file.filename,
+        "text_length": len(extracted_text)
     }

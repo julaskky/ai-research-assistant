@@ -15,13 +15,23 @@ from backend.app.services.metadata_service import extract_metadata
 from backend.app.database.init_db import initialize_database
 from backend.app.database.database import get_db
 from backend.app.database.models import Paper
-
+from pydantic import BaseModel
 
 app = FastAPI(
     title="AI Research Assistant",
     description="An AI-powered research assistant for organizing, searching, summarizing, and querying academic papers.",
     version="0.1.0"
 )
+
+class PaperUpdate(BaseModel):
+    title: str | None = None
+    authors: str | None = None
+    abstract: str | None = None
+    publication_year: int | None = None
+    doi: str | None = None
+    journal: str | None = None
+    keywords: str | None = None
+
 
 
 initialize_database()
@@ -119,6 +129,45 @@ def get_papers(db: Session = Depends(get_db)):
     ]
 
 
+@app.put("/papers/{paper_id}")
+def update_paper(
+    paper_id: int,
+    paper_update: PaperUpdate,
+    db: Session = Depends(get_db)
+):
+    paper = db.query(Paper).filter(Paper.id == paper_id).first()
+
+    if paper is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Paper not found."
+        )
+
+    update_data = paper_update.model_dump(exclude_unset=True)
+
+    for field, value in update_data.items():
+        setattr(paper, field, value)
+
+    db.commit()
+    db.refresh(paper)
+
+    return {
+        "message": "Paper updated successfully",
+        "id": paper.id,
+        "filename": paper.filename,
+        "title": paper.title,
+        "authors": paper.authors,
+        "abstract": paper.abstract,
+        "publication_year": paper.publication_year,
+        "doi": paper.doi,
+        "journal": paper.journal,
+        "keywords": paper.keywords,
+        "updated_at": paper.updated_at
+    }
+
+
+
+
 @app.get("/papers/search")
 def search_papers(q: str, db: Session = Depends(get_db)):
     if not q.strip():
@@ -196,4 +245,41 @@ def get_paper_text(paper_id: int, db: Session = Depends(get_db)):
         "id": paper.id,
         "filename": paper.filename,
         "extracted_text": paper.extracted_text
+    }
+
+
+
+@app.delete("/papers/{paper_id}")
+def delete_paper(
+    paper_id: int,
+    db: Session = Depends(get_db)
+):
+    paper = db.query(Paper).filter(Paper.id == paper_id).first()
+
+    if paper is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Paper not found."
+        )
+
+    file_path = Path(paper.file_path)
+
+    other_papers = (
+        db.query(Paper)
+        .filter(
+            Paper.file_path == paper.file_path,
+            Paper.id != paper.id
+        )
+        .count()
+    )
+
+    db.delete(paper)
+    db.commit()
+
+    if other_papers == 0 and file_path.exists():
+        file_path.unlink()
+
+    return {
+        "message": "Paper deleted successfully",
+        "id": paper_id
     }

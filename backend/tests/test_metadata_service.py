@@ -149,3 +149,34 @@ def test_extract_abstract_stops_at_inline_keywords():
     assert result is not None
     assert "generic research assistant" in result
     assert "Keywords:" not in result
+
+
+
+
+def test_normalize_pdf_hyphenation():
+    text = """
+    This paper presents an auto- mated framework for educational systems.
+    """
+
+    from backend.app.services.metadata_service import normalize_extracted_text
+
+    result = normalize_extracted_text(text)
+
+    assert result is not None
+    assert "automated framework" in result
+
+
+
+
+def test_normalize_preserves_legitimate_hyphenated_term():
+    text = """
+    The system uses a taxonomy- conditioned content generation module.
+    """
+
+    from backend.app.services.metadata_service import normalize_extracted_text
+
+    result = normalize_extracted_text(text)
+
+    assert result is not None
+    assert "taxonomy-conditioned" in result
+    assert "taxonomyconditioned" not in result

@@ -10,6 +10,8 @@ from backend.app.services.pdf_service import (
     extract_title_from_pdf,
     extract_authors_from_pdf
 )
+from backend.app.services.metadata_service import extract_metadata
+
 from backend.app.database.init_db import initialize_database
 from backend.app.database.database import get_db
 from backend.app.database.models import Paper
@@ -53,14 +55,30 @@ async def upload_paper(
         buffer.write(await file.read())
 
     extracted_text = extract_text_from_pdf(file_path)
-    title = extract_title_from_pdf(file_path)
-    authors = extract_authors_from_pdf(file_path)
+
+    metadata = extract_metadata(file_path)
+
+    title = (
+        metadata.get("title")
+        or extract_title_from_pdf(file_path)
+        or file.filename
+    )
+
+    authors = (
+        metadata.get("authors")
+        or extract_authors_from_pdf(file_path)
+    )
 
     paper = Paper(
         filename=file.filename,
-        title=title or file.filename,
+        title=title,
         file_path=str(file_path),
         authors=authors,
+        abstract=metadata.get("abstract"),
+        publication_year=metadata.get("publication_year"),
+        doi=metadata.get("doi"),
+        journal=metadata.get("journal"),
+        keywords=metadata.get("keywords"),
         extracted_text=extracted_text
     )
 

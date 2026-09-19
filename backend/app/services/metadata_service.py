@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 from typing import Optional
-
+from wordfreq import zipf_frequency
 import pymupdf
 
 
@@ -41,8 +41,42 @@ def normalize_extracted_text(text: Optional[str]) -> Optional[str]:
     if not text:
         return None
 
-    # Join words split by a line-break hyphen.
-    text = re.sub(r"(\w)-\s+(\w)", r"\1\2", text)
+    def replace_hyphenated_match(match: re.Match) -> str:
+        """Decide whether a hyphen should be removed."""
+        first_word = match.group(1)
+        second_word = match.group(2)
+
+        joined_word = f"{first_word}{second_word}"
+        hyphenated_word = f"{first_word}-{second_word}"
+
+        joined_frequency = zipf_frequency(
+            joined_word,
+            "en"
+        )
+
+        hyphenated_frequency = zipf_frequency(
+            hyphenated_word,
+            "en"
+        )
+
+        # Remove the hyphen only when the joined form is clearly
+        # more likely to be a normal English word.
+        if (
+            joined_frequency >= 3.0
+            and joined_frequency > hyphenated_frequency
+        ):
+            return joined_word
+
+        return hyphenated_word
+
+    # Handle words that were split by PDF line extraction, such as:
+    # "auto- mated" -> "automated"
+    # "taxonomy- conditioned" -> "taxonomy-conditioned"
+    text = re.sub(
+        r"\b([A-Za-z]+)-\s+([a-z]+)\b",
+        replace_hyphenated_match,
+        text
+    )
 
     # Normalize whitespace.
     text = " ".join(text.split())

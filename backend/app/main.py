@@ -1,23 +1,19 @@
 from pathlib import Path
 
-from backend.app.database.init_db import initialize_database
-
 from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from sqlalchemy import or_
 
 from backend.app.services.pdf_service import (
     extract_text_from_pdf,
     extract_title_from_pdf,
     extract_authors_from_pdf
 )
-
-
-from fastapi import Depends
-from sqlalchemy.orm import Session
-
+from backend.app.database.init_db import initialize_database
 from backend.app.database.database import get_db
 from backend.app.database.models import Paper
 
-from sqlalchemy import or_
 
 app = FastAPI(
     title="AI Research Assistant",
@@ -25,7 +21,9 @@ app = FastAPI(
     version="0.1.0"
 )
 
+
 initialize_database()
+
 
 UPLOAD_DIR = Path("data")
 UPLOAD_DIR.mkdir(exist_ok=True)
@@ -54,14 +52,17 @@ async def upload_paper(
     with file_path.open("wb") as buffer:
         buffer.write(await file.read())
 
-    
     extracted_text = extract_text_from_pdf(file_path)
     title = extract_title_from_pdf(file_path)
     authors = extract_authors_from_pdf(file_path)
 
-
-    paper = Paper(filename=file.filename,title=title or file.filename,file_path=str(file_path), authors=authors, extracted_text=extracted_text)
-    
+    paper = Paper(
+        filename=file.filename,
+        title=title or file.filename,
+        file_path=str(file_path),
+        authors=authors,
+        extracted_text=extracted_text
+    )
 
     db.add(paper)
     db.commit()
@@ -69,8 +70,11 @@ async def upload_paper(
 
     return {
         "message": "Paper uploaded successfully",
-        "filename": file.filename,
-        "text_length": len(extracted_text)
+        "id": paper.id,
+        "filename": paper.filename,
+        "title": paper.title,
+        "authors": paper.authors,
+        "text_length": len(paper.extracted_text)
     }
 
 
@@ -79,15 +83,22 @@ def get_papers(db: Session = Depends(get_db)):
     papers = db.query(Paper).all()
 
     return [
-    {
-        "id": paper.id,
-        "filename": paper.filename,
-        "title": paper.title,
-        "authors": paper.authors,
-        "file_path": paper.file_path
-    }
-    for paper in papers
-]
+        {
+            "id": paper.id,
+            "filename": paper.filename,
+            "title": paper.title,
+            "authors": paper.authors,
+            "abstract": paper.abstract,
+            "publication_year": paper.publication_year,
+            "doi": paper.doi,
+            "journal": paper.journal,
+            "keywords": paper.keywords,
+            "file_path": paper.file_path,
+            "created_at": paper.created_at,
+            "updated_at": paper.updated_at
+        }
+        for paper in papers
+    ]
 
 
 @app.get("/papers/search")
@@ -98,28 +109,32 @@ def search_papers(q: str, db: Session = Depends(get_db)):
             detail="Search query cannot be empty."
         )
 
+    search_term = f"%{q}%"
+
     papers = (
-    db.query(Paper)
-    .filter(
-        or_(
-            Paper.title.ilike(f"%{q}%"),
-            Paper.extracted_text.ilike(f"%{q}%")
+        db.query(Paper)
+        .filter(
+            or_(
+                Paper.title.ilike(search_term),
+                Paper.authors.ilike(search_term),
+                Paper.abstract.ilike(search_term),
+                Paper.journal.ilike(search_term),
+                Paper.keywords.ilike(search_term),
+                Paper.extracted_text.ilike(search_term)
+            )
         )
+        .all()
     )
-    .all()
-)
 
     return [
-    {
-        "id": paper.id,
-        "filename": paper.filename,
-        "title": paper.title
-    }
-    for paper in papers
-]
-
-
-
+        {
+            "id": paper.id,
+            "filename": paper.filename,
+            "title": paper.title,
+            "authors": paper.authors
+        }
+        for paper in papers
+    ]
 
 
 @app.get("/papers/{paper_id}")
@@ -133,14 +148,20 @@ def get_paper(paper_id: int, db: Session = Depends(get_db)):
         )
 
     return {
-    "id": paper.id,
-    "filename": paper.filename,
-    "title": paper.title,
-    "authors": paper.authors,
-    "file_path": paper.file_path,
-    "text_length": len(paper.extracted_text)
+        "id": paper.id,
+        "filename": paper.filename,
+        "title": paper.title,
+        "authors": paper.authors,
+        "abstract": paper.abstract,
+        "publication_year": paper.publication_year,
+        "doi": paper.doi,
+        "journal": paper.journal,
+        "keywords": paper.keywords,
+        "file_path": paper.file_path,
+        "text_length": len(paper.extracted_text),
+        "created_at": paper.created_at,
+        "updated_at": paper.updated_at
     }
-
 
 
 @app.get("/papers/{paper_id}/text")
@@ -158,6 +179,3 @@ def get_paper_text(paper_id: int, db: Session = Depends(get_db)):
         "filename": paper.filename,
         "extracted_text": paper.extracted_text
     }
-
-
-

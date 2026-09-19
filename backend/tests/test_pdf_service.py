@@ -1,6 +1,10 @@
 from pathlib import Path
 
-from backend.app.services.pdf_service import extract_text_from_pdf
+from backend.app.services.pdf_service import (
+    extract_text_from_pdf,
+    extract_authors_from_pdf
+)
+
 
 
 def test_extract_text_from_pdf():
@@ -11,6 +15,17 @@ def test_extract_text_from_pdf():
     assert isinstance(text, str)
     assert len(text) > 0
 
+
+
+def test_extract_authors_from_pdf():
+    pdf_path = Path("data/computers-14-00494.pdf")
+
+    authors = extract_authors_from_pdf(pdf_path)
+
+    assert authors == (
+        "Olaniyan, D.; Olaniyan, J.; "
+        "Obagbuwa, I.C.; Tsetse, A.K."
+    )
 
 
 from fastapi.testclient import TestClient
@@ -63,6 +78,21 @@ def test_get_paper():
     assert paper["title"] == "eXplainable AI Framework for Automated Lesson Plan Generation and Alignment with Bloom’s Taxonomy"
     # assert paper["title"] == "computers-14-00494.pdf"
     assert paper["text_length"] == 56611
+
+
+
+def test_get_paper_authors():
+    response = client.get("/papers/1")
+
+    assert response.status_code == 200
+
+    paper = response.json()
+
+    assert paper["authors"] == (
+        "Olaniyan, D.; Olaniyan, J.; "
+        "Obagbuwa, I.C.; Tsetse, A.K."
+    )
+
 
 
 def test_get_paper_not_found():

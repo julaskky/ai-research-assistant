@@ -4,8 +4,11 @@ from backend.app.database.init_db import initialize_database
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
 
-
-from backend.app.services.pdf_service import (extract_text_from_pdf,extract_title_from_pdf)
+from backend.app.services.pdf_service import (
+    extract_text_from_pdf,
+    extract_title_from_pdf,
+    extract_authors_from_pdf
+)
 
 
 from fastapi import Depends
@@ -51,11 +54,14 @@ async def upload_paper(
     with file_path.open("wb") as buffer:
         buffer.write(await file.read())
 
+    
     extracted_text = extract_text_from_pdf(file_path)
     title = extract_title_from_pdf(file_path)
+    authors = extract_authors_from_pdf(file_path)
 
-    paper = Paper(filename=file.filename, title=title or file.filename,file_path=str(file_path), extracted_text=extracted_text)
-    # paper = Paper(filename=file.filename, title=file.filename, file_path=str(file_path), extracted_text=extracted_text)
+
+    paper = Paper(filename=file.filename,title=title or file.filename,file_path=str(file_path), authors=authors, extracted_text=extracted_text)
+    
 
     db.add(paper)
     db.commit()
@@ -77,6 +83,7 @@ def get_papers(db: Session = Depends(get_db)):
         "id": paper.id,
         "filename": paper.filename,
         "title": paper.title,
+        "authors": paper.authors,
         "file_path": paper.file_path
     }
     for paper in papers
@@ -129,6 +136,7 @@ def get_paper(paper_id: int, db: Session = Depends(get_db)):
     "id": paper.id,
     "filename": paper.filename,
     "title": paper.title,
+    "authors": paper.authors,
     "file_path": paper.file_path,
     "text_length": len(paper.extracted_text)
     }

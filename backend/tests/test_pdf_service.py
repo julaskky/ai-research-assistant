@@ -117,3 +117,21 @@ def test_search_papers_empty_query():
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Search query cannot be empty."
+
+
+
+def test_search_papers_by_title():
+    response = client.get(
+    "/papers/search?q=Bloom"
+)
+
+    assert response.status_code == 200
+
+    papers = response.json()
+
+    assert isinstance(papers, list)
+    assert len(papers) >= 1
+    assert papers[0]["title"] == (
+        "eXplainable AI Framework for Automated Lesson Plan "
+        "Generation and Alignment with Bloom’s Taxonomy"
+    )

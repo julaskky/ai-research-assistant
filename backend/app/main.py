@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from backend.app.database.database import get_db
 from backend.app.database.models import Paper
 
-
+from sqlalchemy import or_
 
 app = FastAPI(
     title="AI Research Assistant",
@@ -92,18 +92,24 @@ def search_papers(q: str, db: Session = Depends(get_db)):
         )
 
     papers = (
-        db.query(Paper)
-        .filter(Paper.extracted_text.ilike(f"%{q}%"))
-        .all()
+    db.query(Paper)
+    .filter(
+        or_(
+            Paper.title.ilike(f"%{q}%"),
+            Paper.extracted_text.ilike(f"%{q}%")
+        )
     )
+    .all()
+)
 
     return [
-        {
-            "id": paper.id,
-            "filename": paper.filename
-        }
-        for paper in papers
-    ]
+    {
+        "id": paper.id,
+        "filename": paper.filename,
+        "title": paper.title
+    }
+    for paper in papers
+]
 
 
 

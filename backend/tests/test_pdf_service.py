@@ -48,7 +48,7 @@ def test_get_papers():
     assert isinstance(papers, list)
     assert len(papers) >= 1
     assert papers[0]["filename"] == "computers-14-00494.pdf"
-
+    
 
 
 def test_get_paper():
@@ -60,7 +60,8 @@ def test_get_paper():
 
     assert paper["id"] == 1
     assert paper["filename"] == "computers-14-00494.pdf"
-    assert paper["title"] == "computers-14-00494.pdf"
+    assert paper["title"] == "eXplainable AI Framework for Automated Lesson Plan Generation and Alignment with Bloom’s Taxonomy"
+    # assert paper["title"] == "computers-14-00494.pdf"
     assert paper["text_length"] == 56611
 
 

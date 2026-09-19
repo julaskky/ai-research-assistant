@@ -4,7 +4,8 @@ from backend.app.database.init_db import initialize_database
 
 from fastapi import FastAPI, File, UploadFile, HTTPException
 
-from backend.app.services.pdf_service import extract_text_from_pdf
+
+from backend.app.services.pdf_service import (extract_text_from_pdf,extract_title_from_pdf)
 
 
 from fastapi import Depends
@@ -51,8 +52,10 @@ async def upload_paper(
         buffer.write(await file.read())
 
     extracted_text = extract_text_from_pdf(file_path)
+    title = extract_title_from_pdf(file_path)
 
-    paper = Paper(filename=file.filename, title=file.filename, file_path=str(file_path), extracted_text=extracted_text)
+    paper = Paper(filename=file.filename, title=title or file.filename,file_path=str(file_path), extracted_text=extracted_text)
+    # paper = Paper(filename=file.filename, title=file.filename, file_path=str(file_path), extracted_text=extracted_text)
 
     db.add(paper)
     db.commit()

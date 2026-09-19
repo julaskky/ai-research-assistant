@@ -2,7 +2,7 @@ from fastapi import FastAPI
 
 from backend.app.api.papers import router as papers_router
 from backend.app.api.research_notes import router as research_notes_router
-
+from backend.app.api.ai import router as ai_router
 
 app = FastAPI(
     title="AI Research Assistant",
@@ -12,7 +12,7 @@ app = FastAPI(
 
 app.include_router(papers_router)
 app.include_router(research_notes_router)
-
+app.include_router(ai_router)
 
 @app.get("/")
 def root():

@@ -3,5 +3,9 @@ uvicorn[standard]
 python-multipart
 pymupdf
 pytest
-httpx2
+httpx
 sqlalchemy
+alembic
+wordfreq
+google-genai
+python-dotenv

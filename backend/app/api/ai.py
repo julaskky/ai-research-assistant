@@ -4,12 +4,16 @@ from sqlalchemy.orm import Session
 
 from backend.app.database.database import get_db
 from backend.app.database.models import Paper
+
+
 from backend.app.services.ai_service import (
     answer_from_context,
+    answer_with_gemini,
     retrieve_relevant_chunks,
     summarize_text,
+    summarize_with_gemini,
+    AI_PROVIDER,
 )
-
 
 router = APIRouter(
     prefix="/papers",
@@ -38,10 +42,21 @@ def summarize_paper(
             detail="Paper not found."
         )
 
-    summary = summarize_text(
-        paper.extracted_text,
-        max_sentences=5
-    )
+    if AI_PROVIDER == "gemini":
+        try:
+            summary = summarize_with_gemini(
+                paper.extracted_text
+            )
+        except Exception:
+            summary = summarize_text(
+                paper.extracted_text,
+                max_sentences=5
+            )
+    else:
+        summary = summarize_text(
+            paper.extracted_text,
+            max_sentences=5
+        )
 
     return {
         "paper_id": paper.id,
@@ -93,14 +108,45 @@ def ask_question(
 
     context = "\n\n".join(chunks)
 
-    answer = answer_from_context(
-        question_data.question,
-        context
-    )
+    if AI_PROVIDER == "gemini":
+        try:
+            answer = answer_with_gemini(
+                question_data.question,
+                context
+            )
+        except Exception:
+            answer = answer_from_context(
+                question_data.question,
+                context
+            )
+    else:
+        answer = answer_from_context(
+            question_data.question,
+            context
+        )
+
+    source_excerpts = []
+
+    for chunk in chunks:
+        excerpt = chunk.strip()
+
+        if len(excerpt) > 700:
+            excerpt = excerpt[:700]
+
+            # Avoid ending the source in the middle of a word.
+            last_space = excerpt.rfind(" ")
+
+            if last_space > 0:
+                excerpt = excerpt[:last_space]
+
+            excerpt += "..."
+
+        source_excerpts.append(excerpt)
+
 
     return {
         "paper_id": paper.id,
         "question": question_data.question,
         "answer": answer,
-        "sources": chunks
+        "sources": source_excerpts
     }

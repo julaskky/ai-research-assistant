@@ -28,6 +28,7 @@ def test_extract_authors_from_pdf():
     )
 
 
+
 from fastapi.testclient import TestClient
 
 from backend.app.main import app
@@ -89,9 +90,10 @@ def test_get_paper_authors():
     paper = response.json()
 
     assert paper["authors"] == (
-        "Olaniyan, D.; Olaniyan, J.; "
-        "Obagbuwa, I.C.; Tsetse, A.K."
+        "Deborah Olaniyan, Julius Olaniyan, "
+        "Ibidun C. Obagbuwa and Anthony K. Tsetse"
     )
+
 
 
 
